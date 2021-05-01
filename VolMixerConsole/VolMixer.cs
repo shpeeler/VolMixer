@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO.Ports;
 using System.Threading;
+using System.Diagnostics;
 
 namespace VolMixerConsole
 {
@@ -13,13 +11,13 @@ namespace VolMixerConsole
         SerialPort port;
         readonly int maxRetries;
         readonly IDictionary<string, string> portMapping;
-        readonly string nircmdLocation;
+        IDictionary<string, int> processMapping;
 
-        readonly string baseCmd = @"{0} setappvolume {1} {2}";
+        readonly string baseArg = @"setappvolume {0} {1}";
         readonly string basePortname = "Port_{0}";
         readonly string baseVolume = "0.{0}";
 
-        public VolMixer(string portName, int baudRate, int maxRetries, IDictionary<string, string> portMapping, string nircmdLocation)
+        public VolMixer(string portName, int baudRate, int maxRetries, IDictionary<string, string> portMapping)
         {
             this.port = new SerialPort
             {
@@ -29,7 +27,24 @@ namespace VolMixerConsole
 
             this.maxRetries = maxRetries;
             this.portMapping = portMapping;
-            this.nircmdLocation = nircmdLocation;
+
+            this.processMapping = new Dictionary<string, int>();
+            foreach (KeyValuePair<string, string> pair in portMapping)
+            {
+                if (string.IsNullOrEmpty(pair.Value))
+                {
+                    Console.WriteLine("no value for key: {0}", pair.Key);
+                    continue;
+                }
+
+                int processId = GetProcessIdByName(pair.Value);
+                if (processId == -1)
+                {
+                    Console.WriteLine("error: invalid process id: {0}", processId);
+                    return;
+                }
+                this.processMapping.Add(pair.Value, processId);
+            }
         }
 
         public void Run()
@@ -64,7 +79,7 @@ namespace VolMixerConsole
                 if (string.IsNullOrEmpty(value) == false)
                 {
                     string[] values = value.Split(':');
-                    if(values.Length != 2)
+                    if (values.Length != 2)
                     {
                         Console.WriteLine("error: value length after split is not as expected. String: {0}", value);
                         continue;
@@ -74,21 +89,60 @@ namespace VolMixerConsole
                     if (this.portMapping.TryGetValue(string.Format(basePortname, values[0]), out application) == false)
                     {
                         Console.WriteLine("error: could not find config key for: {0}", values[0]);
+                        continue;
                     }
-                    string volume = string.Format(baseVolume, values[1]);
 
-                    string cmd = string.Format(baseCmd, nircmdLocation, application, volume).Trim('\n', '\r');
-
-                    System.Diagnostics.ProcessStartInfo proc = new System.Diagnostics.ProcessStartInfo
+                    float volume;
+                    if (float.TryParse(values[1], out volume) == false)
                     {
-                        FileName = @"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
-                        Arguments = cmd,
-                        CreateNoWindow = true
-                    };
-                    
-                    System.Diagnostics.Process.Start(proc);
+                        Console.WriteLine("error: could not parse value: {0} to float", values[1]);
+                        continue;
+                    }
+
+                    // find proc by id, if not avail then reload and change in dict
+                    int processId = this.processMapping[application];
+                    try
+                    {
+                        Process.GetProcessById(processId);
+                    }
+                    catch
+                    {
+                        Console.WriteLine("process with id: {0} no longer exists. trying to find it again.", processId);
+                        int newProcessId = GetProcessIdByName(application); // TODO: move to method
+                        if (newProcessId == -1)
+                        {
+                            Console.WriteLine("error: invalid process id: {0}", processId);
+                            continue;
+                        }
+
+                        processId = newProcessId;
+                        this.processMapping[application] = newProcessId;
+                    }
+
+                    VolumeMixer.SetApplicationVolume(processId, volume);
                 }
             }
+        }
+
+        private int GetProcessIdByName(string procName)
+        {
+            int retVal = -1;
+
+            // go through all processed
+            foreach (Process process in Process.GetProcesses())
+            {
+                // filter processes which are available in mixer
+                if (VolumeMixer.GetApplicationVolume(process.Id) != null)
+                {
+                    // if processname equals the seached name
+                    if (process.ProcessName.ToUpper() == procName.ToUpper())
+                    {
+                        return process.Id;
+                    }
+                }
+            }
+
+            return retVal;
         }
     }
 }
