@@ -68,7 +68,7 @@ namespace VolMixerConsole
                 throw new Exception("unable to parse config key: 'LogLevel' to int");
             }
 
-            return new Logger(logFilename, logFilepath, (LogLevel)logLevel);
+            return new Logger(logFilename + "-" + DateTime.Today.ToString("dd-MM-yyyy"), logFilepath, (LogLevel)logLevel);
         }
     }
 }
