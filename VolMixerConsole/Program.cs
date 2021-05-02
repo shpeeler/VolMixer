@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
-using VolMixerConsole.Logging;
+using log4net;
 
 namespace VolMixerConsole
 {
@@ -9,8 +9,8 @@ namespace VolMixerConsole
     {
         static void Main(string[] args)
         {
-            ILog logger = InitLogger();
-            if (logger == null)
+            ILog log = LogManager.GetLogger(nameof(VolMixer));
+            if (log == null)
             {
                 throw new Exception("unable to initialize logger");
             }
@@ -20,25 +20,25 @@ namespace VolMixerConsole
             int baudrate;
             if (int.TryParse(ConfigurationManager.AppSettings["Baudrate"], out baudrate) == false)
             {
-                logger.LogError("unable to parse config key: 'Baudrate' to int");
+                log.Error("unable to parse config key: 'Baudrate' to int");
                 return;
             }
 
             int maxRetries;
             if (int.TryParse(ConfigurationManager.AppSettings["MaxRetries"], out maxRetries) == false)
             {
-                logger.LogError("unable to parse config key: 'MaxRetries' to int");
+                log.Error("unable to parse config key: 'MaxRetries' to int");
                 return;
             }
 
-            VolMixer volMixer = new VolMixer(portname, baudrate, maxRetries, ReadPortMappingFromConfig(), logger);
+            VolMixer volMixer = new VolMixer(portname, baudrate, maxRetries, ReadPortMappingFromConfig(), log);
             try
             {
                 volMixer.Run();
             }
             catch (Exception e)
             {
-                logger.LogError(string.Format("error while running {0}", nameof(VolMixer)), e);
+                log.Error(string.Format("error while running {0}", nameof(VolMixer)), e);
             }
         }
 
@@ -55,20 +55,6 @@ namespace VolMixerConsole
             }
 
             return portMapping;
-        }
-
-        static ILog InitLogger()
-        {
-            string logFilename = ConfigurationManager.AppSettings["LogFilename"];
-            string logFilepath = ConfigurationManager.AppSettings["LogFilepath"];
-
-            int logLevel;
-            if (int.TryParse(ConfigurationManager.AppSettings["LogLevel"], out logLevel) == false)
-            {
-                throw new Exception("unable to parse config key: 'LogLevel' to int");
-            }
-
-            return new Logger(logFilename + "-" + DateTime.Today.ToString("dd-MM-yyyy"), logFilepath, (LogLevel)logLevel);
         }
     }
 }
