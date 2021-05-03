@@ -241,8 +241,8 @@ namespace VolMixerConsole
                 if (TryGetProcessIdByName(pair.Value, out processId) == false)
                 {
                     this.log.Warn(string.Format("unable to find a process with the name: '{0}'", pair.Value));
-                    continue;
                 }
+
                 processMapping.Add(pair.Value, processId);
             }
 
