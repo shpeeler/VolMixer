@@ -1,10 +1,17 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Configuration;
+using VolMixerConsole.Components;
 using log4net;
 
 namespace VolMixerConsole
 {
+    /// <summary>
+    /// Console implementation for <see cref="VolMixer"/>
+    /// Console impl see: https://github.com/shpeeler/VolMixerConsole
+    /// Service impl see: https://github.com/shpeeler/VolMixerService
+    /// </summary>
     class Program
     {
         static void Main(string[] args)
@@ -12,28 +19,46 @@ namespace VolMixerConsole
             ILog log = LogManager.GetLogger(nameof(VolMixer));
             if (log == null)
             {
-                throw new Exception("unable to initialize logger");
+                throw new Exception("unable to initialize logger - terminating");
             }
 
             string portname = ConfigurationManager.AppSettings["Portname"];
+            if (string.IsNullOrEmpty(portname))
+            {
+                log.Error("Portname value in app config is null - terminating");
+                return;
+            }
 
             string deviceName = ConfigurationManager.AppSettings["DeviceName"];
+            if (string.IsNullOrEmpty(deviceName))
+            {
+                log.Error("DeviceName value in app config is null - terminating");
+            }
 
             int baudrate;
             if (int.TryParse(ConfigurationManager.AppSettings["Baudrate"], out baudrate) == false)
             {
-                log.Error("unable to parse config key: 'Baudrate' to int");
+                log.Error("unable to parse config key: 'Baudrate' to int - terminating");
                 return;
             }
 
             int maxRetries;
             if (int.TryParse(ConfigurationManager.AppSettings["MaxRetries"], out maxRetries) == false)
             {
-                log.Error("unable to parse config key: 'MaxRetries' to int");
+                log.Error("unable to parse config key: 'MaxRetries' to int - terminating");
                 return;
             }
 
-            VolMixer volMixer = new VolMixer(portname, baudrate, maxRetries, ReadPortMappingFromConfig(), log, deviceName);
+            IDictionary<string, string> pinMapping = ReadPortMappingFromConfig();
+            IDictionary<string, IList<int>> processMapping;
+            if (VolMixerHelper.TryCreateProcessMapping(log, pinMapping, deviceName, out processMapping) == false)
+            {
+                log.Error("unable to initialize process mapping - terminating");
+                return;
+            }
+
+            VolMixerConfig volMixerConfig = new VolMixerConfig(portname, baudrate, maxRetries, deviceName, pinMapping, processMapping);
+            VolMixer volMixer = new VolMixer(log, volMixerConfig);
             try
             {
                 volMixer.Run();
@@ -44,11 +69,15 @@ namespace VolMixerConsole
             }
         }
 
-        static IDictionary<string, string> ReadPortMappingFromConfig()
+        /// <summary>
+        /// creates a port-mapping from the current app data configuration
+        /// </summary>
+        /// <returns><see cref="IDictionary{TKey, TValue}"/> pin-name to application</returns>
+        private static IDictionary<string, string> ReadPortMappingFromConfig()
         {
             IDictionary<string, string> portMapping = new Dictionary<string, string>();
 
-            foreach(string key in ConfigurationManager.AppSettings)
+            foreach (string key in ConfigurationManager.AppSettings)
             {
                 if (key.StartsWith("Pin_"))
                 {
