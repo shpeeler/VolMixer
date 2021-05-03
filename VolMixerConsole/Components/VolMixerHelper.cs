@@ -204,9 +204,9 @@ namespace VolMixerConsole.Components
         /// <summary>
         /// tries to get an IMMDevice by its PKEY_DEVICE_FRIENDLY_NAME
         /// </summary>
-        /// <param name="deviceFriendlyName">PKEY_DEVICE_FRIENDLY_NAME of sound output device</param>
+        /// <param name="pDeviceFriendlyName">PKEY_DEVICE_FRIENDLY_NAME of sound output device</param>
         /// <returns>true if succesful, false if not</returns>
-        private static IMMDevice GetIMMDeviceByName(string deviceFriendlyName)
+        private static IMMDevice GetIMMDeviceByName(string pDeviceFriendlyName)
         {
             IMMDeviceEnumerator deviceEnumerator = (IMMDeviceEnumerator)(new MMDeviceEnumerator());
 
@@ -231,7 +231,7 @@ namespace VolMixerConsole.Components
                 propertyStore.GetValue(ref propertyKey, out propVariant);
 
                 object propValue = propVariant.Value;
-                if (propValue.ToString() == deviceFriendlyName)
+                if (propValue.ToString() == pDeviceFriendlyName)
                 {
                     targetDevice = device;
 
