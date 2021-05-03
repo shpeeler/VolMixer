@@ -17,6 +17,8 @@ namespace VolMixerConsole
 
             string portname = ConfigurationManager.AppSettings["Portname"];
 
+            string deviceName = ConfigurationManager.AppSettings["DeviceName"];
+
             int baudrate;
             if (int.TryParse(ConfigurationManager.AppSettings["Baudrate"], out baudrate) == false)
             {
@@ -31,7 +33,7 @@ namespace VolMixerConsole
                 return;
             }
 
-            VolMixer volMixer = new VolMixer(portname, baudrate, maxRetries, ReadPortMappingFromConfig(), log);
+            VolMixer volMixer = new VolMixer(portname, baudrate, maxRetries, ReadPortMappingFromConfig(), log, deviceName);
             try
             {
                 volMixer.Run();

@@ -51,14 +51,31 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CoreAudio\Enums\EDataFlow.cs" />
+    <Compile Include="CoreAudio\Enums\EDeviceState.cs" />
+    <Compile Include="CoreAudio\Enums\ERole.cs" />
+    <Compile Include="CoreAudio\Enums\StorageAccessMode.cs" />
+    <Compile Include="CoreAudio\Interfaces\IAudioSessionControl2.cs" />
+    <Compile Include="CoreAudio\Interfaces\IAudioSessionEnumerator.cs" />
+    <Compile Include="CoreAudio\Interfaces\IAudioSessionManager2.cs" />
+    <Compile Include="CoreAudio\Interfaces\IMMDevice.cs" />
+    <Compile Include="CoreAudio\Interfaces\IMMDeviceCollection.cs" />
+    <Compile Include="CoreAudio\Interfaces\IMMDeviceEnumerator.cs" />
+    <Compile Include="CoreAudio\Interfaces\IPropertyStore.cs" />
+    <Compile Include="CoreAudio\Interfaces\ISimpleAudioVolume.cs" />
+    <Compile Include="CoreAudio\MMDeviceEnumerator.cs" />
+    <Compile Include="CoreAudio\Properties\PropertyKey.cs" />
+    <Compile Include="CoreAudio\Properties\PropertyKeys.cs" />
+    <Compile Include="CoreAudio\Properties\PropVariant.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="VolMixer.cs" />
-    <Compile Include="VolumeMixer.cs" />
+    <Compile Include="VolMixerHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

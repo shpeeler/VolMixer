@@ -21,6 +21,8 @@ namespace VolMixerConsole
         readonly ILog log;
         readonly IDictionary<string, string> portMapping;
         readonly int maxRetries;
+        readonly VolMixerHelper volMixerHelper;
+        readonly string deviceName;
 
         IDictionary<string, int> processMapping;
 
@@ -32,7 +34,7 @@ namespace VolMixerConsole
         /// <param name="maxRetries">maximum amount of retries when opening the port</param>
         /// <param name="pinMapping">mapping from </param>
         /// <param name="log">instance of <see cref="ILog"/></param>
-        public VolMixer(string portName, int baudRate, int maxRetries, IDictionary<string, string> pinMapping, ILog log)
+        public VolMixer(string portName, int baudRate, int maxRetries, IDictionary<string, string> pinMapping, ILog log, string deviceName)
         {
             this.port = new SerialPort
             {
@@ -43,6 +45,9 @@ namespace VolMixerConsole
             this.maxRetries = maxRetries;
             this.portMapping = pinMapping;
             this.log = log;
+            this.deviceName = deviceName;
+
+            volMixerHelper = new VolMixerHelper(log);
 
             this.processMapping = CreateProcessMapping(pinMapping);
         }
@@ -92,7 +97,10 @@ namespace VolMixerConsole
                         this.processMapping[application] = newProcessId;
                     }
 
-                    VolumeMixer.SetApplicationVolume(processId, volume);
+                    if(this.volMixerHelper.TrySetApplicationVolume(processId, this.deviceName, volume))
+                    {
+
+                    }
                 }
             }
         }
@@ -200,7 +208,7 @@ namespace VolMixerConsole
             foreach (Process process in Process.GetProcesses())
             {
                 // filter processes which are available in mixer
-                if (VolumeMixer.GetApplicationVolume(process.Id) != null)
+                if (this.volMixerHelper.TryGetApplicationVolume(process.Id, this.deviceName, out float? oVolume))
                 {
                     // if processname equals the seached name
                     if (process.ProcessName.ToUpper() == procName.ToUpper())
