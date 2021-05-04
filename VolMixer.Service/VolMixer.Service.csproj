@@ -82,4 +82,7 @@
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>xcopy "$(SolutionDir)VolMixer.Service\bin\Debug\*.*" "E:\tools\VolMixerService" /Y/D</PostBuildEvent>
+  </PropertyGroup>
 </Project>

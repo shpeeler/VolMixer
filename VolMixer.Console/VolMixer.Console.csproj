@@ -58,4 +58,7 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>xcopy "$(SolutionDir)VolMixer.Console\bin\Debug\*.*" "E:\tools\VolMixerConsole" /Y/D</PostBuildEvent>
+  </PropertyGroup>
 </Project>
